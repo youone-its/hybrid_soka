@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HEFT-TS-VND: A Treasure Hunter's Guide to Cloud Scheduling</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="tooltip" class="tooltip"></div>
+<div class="deck" id="deck">
+
+<!-- ============ PART 0: TITLE ============ -->
+<section class="slide" data-id="title" data-sec="Intro">
+  <div class="title-grid">
+    <div>
+      <p class="kicker in">cloudsim_hybrid · interactive presentation</p>
+      <h1 class="in" style="--d:.1s">HEFT-TS-VND</h1>
+      <p class="h1sub in" style="--d:.2s">HEFT-seeded Tabu Search + Variable Neighborhood Descent</p>
+      <p class="lead in" style="--d:.35s">A hybrid algorithm for <b>cloud task scheduling</b>, explained first as a
+        <b>treasure hunt in foggy mountains</b> 🏔️, then as the real thing ☁️.</p>
+      <p class="hint-keys in" style="--d:.5s">Use <kbd>←</kbd> <kbd>→</kbd> or <kbd>Space</kbd> to navigate · <kbd>M</kbd> for the slide menu</p>
+    </div>
+    <div class="panel in heroc" style="--d:.3s"><canvas id="cvTitle" class="fillc"></canvas></div>
+  </div>
+</section>
+
+<!-- ============ PART 1: THE STORY ============ -->
+<section class="slide" data-id="c1" data-sec="The story">
+  <p class="kicker">Part 1 · The story · 1/5</p>
+  <h2>🏔️ A treasure hunter lost in foggy mountains</h2>
+  <div class="row fill">
+    <div class="panel grow2 col"><canvas id="cvC1" class="fillc"></canvas><div class="caption" id="capC1">The treasure 💎 is buried at the <b>lowest point</b> of the mountains. Where is it?</div></div>
+    <div class="side">
+      <div class="rule"><span>🎯</span><div><b>Goal</b><br>reach the <b>deepest valley</b>. Lower = better.</div></div>
+      <div class="rule"><span>🌫️</span><div><b>Fog</b><br>you only see <b>2 steps</b> to each side.</div></div>
+      <div class="rule"><span>🔋</span><div><b>Limited energy</b><br>you can't walk forever.</div></div>
+      <div class="btn-row">
+        <button class="btn sm primary" id="c1Walk">🚶 Just walk downhill</button>
+        <button class="btn sm" id="c1Fog">👁 Lift the fog</button>
+        <button class="btn sm ghost" id="c1Reset">↺</button>
+      </div>
+      <p class="note">The obvious strategy, "always step downhill", has a problem. Try it.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-id="c2" data-sec="The story">
+  <p class="kicker">Part 1 · The story · 2/5 · Trick 1</p>
+  <h2>🚁 Trick 1: take a helicopter to a good starting spot</h2>
+  <div class="row fill">
+    <div class="panel grow2 col"><canvas id="cvC2" class="fillc"></canvas><div class="caption" id="capC2">Where you <b>start</b> matters a lot. Compare the two drops.</div></div>
+    <div class="side">
+      <p>A local guide flies you in. He <b>doesn't know</b> where the treasure is, but he knows the terrain roughly, so he drops you somewhere <b>low</b> in seconds.</p>
+      <div class="btn-row">
+        <button class="btn sm" id="c2Rand">🎲 Random drop</button>
+        <button class="btn sm primary" id="c2Heli">🚁 Helicopter drop</button>
+      </div>
+      <div class="score" id="c2Score"></div>
+      <div class="maps"><b>☁️ In the real algorithm</b><br>🚁 helicopter = <b>HEFT</b>, a fast rule-of-thumb that builds a good schedule in milliseconds.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-id="c3" data-sec="The story">
+  <p class="kicker">Part 1 · The story · 3/5 · Trick 2</p>
+  <h2>👣 Trick 2: leave footprints, never step back on them</h2>
+  <div class="row fill">
+    <div class="panel grow2 col"><canvas id="cvC3" class="fillc"></canvas><div class="caption" id="capC3">You start at the bottom of the valley where the helicopter left you. Press <b>Step</b>.</div></div>
+    <div class="side">
+      <p>① Look at the spots around you and go to the <b>best one</b>, <b>even if it's uphill</b>.</p>
+      <p>② Leave a 👣 footprint where you were. You <b>can't step on it</b> for a few steps, so you can't slide back into the same hole.</p>
+      <p>③ Footprints <b>melt</b> after 5 steps. ✨ <b>Exception</b>: you may step on one if it's a new record.</p>
+      <div class="btn-row">
+        <button class="btn sm primary" id="c3Step">Step</button>
+        <button class="btn sm" id="c3Auto">▶ Auto</button>
+        <button class="btn sm ghost" id="c3Reset">↺</button>
+      </div>
+      <label class="chk"><input type="checkbox" id="c3Mem" checked> 👣 leave footprints (memory)</label>
+      <div class="maps"><b>☁️ In the real algorithm</b><br>👣 footprints = <b>tabu list</b> · melting = <b>tenure</b> · exception = <b>aspiration</b>. Together: <b>Tabu Search</b>.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-id="c4" data-sec="The story">
+  <p class="kicker">Part 1 · The story · 4/5 · Trick 3</p>
+  <h2>🔦 Trick 3: whenever you break a record, search the area thoroughly</h2>
+  <div class="row fill">
+    <div class="panel grow2 col"><canvas id="cvC4" class="fillc"></canvas><div class="caption" id="capC4">You just reached a <b>new record low</b> ⭐. Before moving on, use your 3 tools here.</div></div>
+    <div class="side">
+      <div class="tools" id="tools">
+        <div data-k="0"><span>🔦</span><div><b>Tool 1 · flashlight</b><br>check the spots right next to you</div></div>
+        <div data-k="1"><span>🔭</span><div><b>Tool 2 · binoculars</b><br>check spots a bit further away</div></div>
+        <div data-k="2"><span>🪂</span><div><b>Tool 3 · paraglider</b><br>try a few spots far away</div></div>
+      </div>
+      <p class="small">Found something lower? Go there and <b>start again with tool 1</b>. Nothing found? Try the <b>next tool</b>. When all 3 fail, the area is fully searched.</p>
+      <button class="btn sm primary" id="c4Run">🔍 Search the area</button>
+      <div class="maps"><b>☁️ In the real algorithm</b><br>the 3 tools = 3 <b>neighbourhoods</b> · this ladder = <b>VND</b> (Variable Neighborhood Descent).</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-id="c5" data-sec="The story">
+  <p class="kicker">Part 1 · The story · 5/5</p>
+  <h2>🧭 The full expedition: do the tricks really matter?</h2>
+  <div class="row fill">
+    <div class="panel grow2 col"><canvas id="cvC5" class="fillc"></canvas><div class="caption" id="capC5">Choose which tricks to use, then send the explorer out with <b>25 steps</b> of energy.</div></div>
+    <div class="side">
+      <label class="chk"><input type="checkbox" id="c5Heli" checked> 🚁 helicopter start</label>
+      <label class="chk"><input type="checkbox" id="c5Mem" checked> 👣 footprints</label>
+      <label class="chk"><input type="checkbox" id="c5Vnd" checked> 🔦 area search on records</label>
+      <div class="btn-row"><button class="btn sm primary" id="c5Run">▶ Send explorer</button><button class="btn sm" id="c5All">Try all 4 combos</button></div>
+      <table class="board" id="c5Board"><tr><th>🚁</th><th>👣</th><th>🔦</th><th>lowest point</th><th>💎?</th></tr></table>
+      <p class="note">Removing one trick at a time to see what it contributes is called an <b>ablation</b> study. We'll do the same with the real algorithm.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PART 2: THE REAL PROBLEM ============ -->
+<section class="slide" data-id="analogy" data-sec="The story">
+  <p class="kicker">The story = the algorithm · watch it run</p>
+  <h2>📜 HEFT-TS-VND, one line at a time</h2>
+  <div class="row fill">
+    <div class="panel grow2 col"><canvas id="cvAlg" class="fillc"></canvas><div class="caption" id="capAlg">Press <b>▶ Run</b>: the hunter executes the pseudocode on the right, line by line.</div></div>
+    <div class="side wide">
+      <div class="pcode" id="pcode">
+      <div class="ln" data-l="0"><span class="ic">🚁</span><code>x&nbsp;←&nbsp;HEFT();&nbsp;&nbsp;best&nbsp;←&nbsp;x</code><span class="st">Fly in with the guide</span></div>
+      <div class="ln" data-l="1"><span class="ic">🔋</span><code>while&nbsp;evals&nbsp;&lt;&nbsp;budget:</code><span class="st">While energy remains</span></div>
+      <div class="ln" data-l="2"><span class="ic">🌫️</span><code>&nbsp;&nbsp;C&nbsp;←&nbsp;candidate&nbsp;moves&nbsp;around&nbsp;x</code><span class="st">Look at the visible spots</span></div>
+      <div class="ln" data-l="3"><span class="ic">👣</span><code>&nbsp;&nbsp;drop&nbsp;m&nbsp;∈&nbsp;C&nbsp;if&nbsp;tabu,&nbsp;unless&nbsp;F(x⊕m)&nbsp;&lt;&nbsp;F(best)</code><span class="st">Skip footprints (unless record)</span></div>
+      <div class="ln" data-l="4"><span class="ic">🚶</span><code>&nbsp;&nbsp;x&nbsp;←&nbsp;argmin&nbsp;F(x⊕m)&nbsp;&nbsp;&nbsp;#&nbsp;even&nbsp;if&nbsp;worse</code><span class="st">Walk to the lowest, even uphill</span></div>
+      <div class="ln" data-l="5"><span class="ic">🫧</span><code>&nbsp;&nbsp;tabu[old&nbsp;x]&nbsp;←&nbsp;it&nbsp;+&nbsp;7</code><span class="st">Leave a footprint (melts in 7)</span></div>
+      <div class="ln" data-l="6"><span class="ic">⭐</span><code>&nbsp;&nbsp;if&nbsp;F(x)&nbsp;&lt;&nbsp;F(best):&nbsp;x&nbsp;←&nbsp;VND(x);&nbsp;best&nbsp;←&nbsp;x</code><span class="st">New record → 🔦🔭🪂 area search</span></div>
+      <div class="ln" data-l="7"><span class="ic">💎</span><code>return&nbsp;best</code><span class="st">Go home with the best spot</span></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn sm primary" id="algRun">▶ Run</button>
+        <button class="btn sm" id="algStep">Next line ▶|</button>
+        <button class="btn sm ghost" id="algReset">↺</button>
+        <span class="pill" id="algMeter">🔋 0 · ⭐ –</span>
+      </div>
+      <div class="vndbar" id="algVnd"><span data-k="0">🔦 N1</span><span data-k="1">🔭 N2</span><span data-k="2">🪂 N3</span></div>
+      <p class="note">This routine knows nothing about clouds: it only needs a way to <b>score</b> a solution and to <b>tweak</b> it. Part 2 plugs in cloud scheduling.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-id="cloud" data-sec="The real problem">
+  <p class="kicker">Part 2 · Back to reality ☁️ · a "spot" = a choice of VM for every task</p>
+  <h2>5 virtual machines in 2 datacenters</h2>
+  <div class="dcs" id="dcs"></div>
+  <p class="note in" style="--d:.8s">Faster VMs cost more and use more power. Data moves fast inside a datacenter (100 MB/s) but slowly between them (20 MB/s). These VM types come from <code>cloudsim/environment.py</code>.</p>
+</section>
+
+<section class="slide" data-id="workflow" data-sec="The real problem">
+  <p class="kicker">Meet the work</p>
+  <h2>A workflow: tasks that wait for each other</h2>
+  <div class="row fill">
+    <div class="panel grow col"><svg id="dagWorkflow" class="dag" viewBox="0 0 760 380" preserveAspectRatio="xMidYMid meet"></svg>
+      <div class="caption" id="capWf">👆 Click any task to see what it waits for and what it unlocks.</div></div>
+    <div class="side">
+      <h4>How to read it</h4>
+      <div class="howto"><b>1</b><div>Each <b>box</b> is a task. The icon shows what it needs: ⚙️ anything · 🧠 4 GB RAM · 🎮 a GPU. The white bar shows how big it is.</div></div>
+      <div class="howto"><b>2</b><div>An <b>arrow A → B</b> means B needs A's output, so <b>B can't start until A is done</b>.</div></div>
+      <div class="howto"><b>3</b><div>Read <b>left to right</b>: "step 1" tasks can start right away, "step 6" comes last.</div></div>
+      <button class="btn sm primary" id="wfPlay">▶ Play the workflow</button>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-id="try" data-sec="The real problem">
+  <p class="kicker">Your turn</p>
+  <h2>Be the scheduler: click a task to give it another VM</h2>
+  <div class="howstrip">
+    <span><b>1</b> task colour = the VM it runs on: <span id="vmChips"></span></span>
+    <span><b>2</b> Gantt chart: one <b>row per VM</b>, each bar = a task running over time</span>
+    <span><b>3</b> <span style="color:#fbbf24">┊ yellow line</span> = when <b>everything</b> is finished</span>
+  </div>
+  <div class="row fill">
+    <div class="panel grow col"><svg id="dagTry" class="dag" viewBox="0 0 760 380" preserveAspectRatio="xMidYMid meet"></svg></div>
+    <div class="panel grow col">
+      <svg id="ganttTry" class="gantt" viewBox="0 0 760 300" preserveAspectRatio="xMidYMid meet"></svg>
+      <div class="tiles" id="tilesTry"></div>
+      <div class="btn-row">
+        <button class="btn sm" data-preset="heft">⚡ HEFT</button>
+        <button class="btn sm" data-preset="random">🎲 Random</button>
+        <button class="btn sm" data-preset="cheap">💰 Cheapest</button>
+        <button class="btn sm" data-preset="fast">🚀 Fastest</button>
+      </div>
+    </div>
+  </div>
+  <div class="caption" id="capTry"></div>
+</section>
+
+<section class="slide" data-id="score" data-sec="The real problem">
+  <p class="kicker">What does "good" mean?</p>
+  <h2>One score, F(x), from four goals. Lower is better.</h2>
+  <div class="row fill">
+    <div class="side narrow">
+      <h4>Pick a schedule</h4>
+      <div id="schedPick" class="pick"></div>
+      <h4>Weights</h4>
+      <div id="weightSliders" class="sliders"></div>
+      <button class="btn sm ghost" id="resetWeights">Reset weights</button>
+    </div>
+    <div class="panel grow col"><div id="receipt" class="receipt"></div></div>
+    <div class="side">
+      <h4>How the score works</h4>
+      <p>Each goal is compared with <b>HEFT</b>: <b>1.00</b> = same as HEFT, <b>1.20</b> = 20% worse, <b>0.90</b> = 10% better.</p>
+      <p>Then each ratio is multiplied by its <b>weight</b> (how much we care), and the results are added up.</p>
+      <p>HEFT itself scores <b>0.4 + 0.2 + 0.2 + 0 = 0.80</b>. That's the number to beat.</p>
+      <p class="note">Formula in <code>evaluation/objectives.py</code>:<br>F = w₁·T/T<sub>HEFT</sub> + w₂·C/C<sub>HEFT</sub> + w₃·E/E<sub>HEFT</sub> + w₄·SLA</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-id="hard" data-sec="The real problem">
+  <p class="kicker">Why not just try every schedule?</p>
+  <h2>Because there are <span class="hl">way</span> too many: the mountains are huge</h2>
+  <div class="hard">
+    <div class="hcard in" style="--d:.1s"><span>Our toy: 16 tasks × 5 VMs</span><b id="h1">0</b><small>5¹⁶ schedules · ≈ 1.8 days at 1 million/sec</small></div>
+    <div class="hcard in" style="--d:.4s"><span>Repo "medium": 300 tasks × 20 VMs</span><b id="h2">10^0</b><small>20³⁰⁰ schedules</small></div>
+    <div class="hcard in" style="--d:.7s"><span>Atoms in the observable universe</span><b>10<sup>80</sup></b><small>for comparison 🤯</small></div>
+  </div>
+  <p class="bigq in" style="--d:1s">Every schedule is a spot in a gigantic foggy mountain range. We need the <b>treasure hunter's tricks</b>.</p>
+</section>
+
+<!-- ============ PART 3: STORY → ALGORITHM ============ -->
+<section class="slide" data-id="mapping" data-sec="The algorithm">
+  <p class="kicker">Part 3 · Translating the story</p>
+  <h2>🏔️ Mountains → ☁️ Cloud scheduling</h2>
+  <div class="maptable" id="maptable">
+    <div class="mrow head"><div>🏔️ In the story</div><div></div><div>☁️ In HEFT-TS-VND</div></div>
+    <div class="mrow in" style="--d:.05s"><div>📍 a spot in the mountains</div><div>→</div><div>a <b>schedule</b> (a VM for every task)</div></div>
+    <div class="mrow in" style="--d:.15s"><div>⛰️ altitude</div><div>→</div><div>the <b>score F(x)</b>: lower = better</div></div>
+    <div class="mrow in" style="--d:.25s"><div>💎 the deepest valley</div><div>→</div><div>the <b>best possible schedule</b></div></div>
+    <div class="mrow in" style="--d:.35s"><div>🚶 one step</div><div>→</div><div>a <b>move</b>: give one task another VM, or swap two tasks</div></div>
+    <div class="mrow in" style="--d:.45s"><div>🌫️ fog: see only nearby</div><div>→</div><div>each round, evaluate only <b>~15 candidate moves</b></div></div>
+    <div class="mrow in" style="--d:.55s"><div>🚁 helicopter drop</div><div>→</div><div><b>Stage 1: HEFT</b> builds the starting schedule</div></div>
+    <div class="mrow in" style="--d:.65s"><div>👣 footprints · melting · exception</div><div>→</div><div><b>Stage 2: Tabu Search</b> · tabu list · tenure = 7 · aspiration</div></div>
+    <div class="mrow in" style="--d:.75s"><div>🔦🔭🪂 area search on records</div><div>→</div><div><b>Stage 3: VND</b> with neighbourhoods N1 → N2 → N3</div></div>
+    <div class="mrow in" style="--d:.85s"><div>🔋 energy</div><div>→</div><div>budget of <b>1,500 score evaluations</b> (same as ALNS)</div></div>
+  </div>
+</section>
+
+<section class="slide" data-id="heft" data-sec="The algorithm">
+  <p class="kicker">Stage 1 · 🚁 HEFT (Heterogeneous Earliest Finish Time)</p>
+  <h2>The helicopter: build a good schedule in one quick pass</h2>
+  <div class="controls">
+    <button class="btn sm primary" id="hStep">Place next task ▶|</button>
+    <button class="btn sm" id="hPlay">▶ Play</button>
+    <button class="btn sm ghost" id="hReset">↺ Reset</button>
+    <span class="pill" id="hCount">0 / 16 placed</span>
+  </div>
+  <div class="row fill">
+    <div class="side narrow">
+      <h4>① Urgency order</h4>
+      <p class="small">Tasks with a <b>long chain of work after them</b> go first (their "upward rank").</p>
+      <div id="hOrder" class="order"></div>
+    </div>
+    <div class="panel grow2 col"><svg id="ganttHeft" class="gantt" viewBox="0 0 760 300" preserveAspectRatio="xMidYMid meet"></svg></div>
+    <div class="side">
+      <h4>② Place it where it finishes earliest</h4>
+      <div id="hInfo" class="eftbox"></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-id="nbrs" data-sec="The algorithm">
+  <p class="kicker">Stage 2 · 🌫️ The spots you can see in the fog</p>
+  <h2>What is one "step"? Four kinds of moves</h2>
+  <div class="row fill">
+    <div class="panel grow2 col"><svg id="ganttNb" class="gantt" viewBox="0 0 760 300" preserveAspectRatio="xMidYMid meet"></svg>
+      <div class="caption" id="nbCap">👉 Click a move type on the right to see an example applied to the HEFT schedule.</div></div>
+    <div class="side">
+      <div class="opcard" data-k="critical"><b>🎯 Critical-path move</b>: a task on the chain that decides the finish time goes to a less busy VM.</div>
+      <div class="opcard" data-k="bottleneck"><b>🔥 Bottleneck move</b>: a task leaves the busiest VM.</div>
+      <div class="opcard" data-k="cheap"><b>💰 Cheaper-VM move</b>: a task goes to the VM that is cheapest in cost + power for it.</div>
+      <div class="opcard" data-k="swap"><b>🔄 Swap</b>: two tasks on different VMs trade places.</div>
+      <p class="small">Each round, Tabu Search builds about <b>15 such candidates</b> (the spots visible in the fog), scores them all, and steps to the <b>best one that isn't tabu</b> (no 👣). Afterwards the task may not go back to its old VM for 7 rounds.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-id="vnd" data-sec="The algorithm">
+  <p class="kicker">Stage 3 · 🔦🔭🪂 VND on a real schedule</p>
+  <h2>Every new record gets searched with 3 neighbourhoods</h2>
+  <div class="row fill">
+    <div class="side narrow">
+      <div class="tools" id="vTools">
+        <div data-k="0"><span>🔦</span><div><b>N1 · critical-path move</b><br>tasks on the finish-time chain</div></div>
+        <div data-k="1"><span>🔭</span><div><b>N2 · cheaper-VM move</b><br>cut cost and energy</div></div>
+        <div data-k="2"><span>🪂</span><div><b>N3 · swap</b><br>two tasks trade VMs</div></div>
+      </div>
+      <button class="btn sm primary" id="vndRun">🔍 Run VND</button>
+      <div id="vndLog" class="mlog"></div>
+    </div>
+    <div class="panel grow col">
+      <svg id="ganttVnd" class="gantt" viewBox="0 0 760 300" preserveAspectRatio="xMidYMid meet"></svg>
+      <div class="caption" id="vndCap">We start from a random schedule (a "record" the search just reached). Press <b>Run VND</b>.</div>
+      <div class="tiles" id="vndTiles"></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-id="play" data-sec="The algorithm">
+  <p class="kicker">All 3 stages together</p>
+  <h2>Watch HEFT-TS-VND optimise, live</h2>
+  <div class="controls">
+    <button class="btn sm primary" id="tStep">Step ▶|</button>
+    <button class="btn sm" id="tPlay">▶ Play</button>
+    <label>Speed <input type="range" id="tSpeed" min="0" max="3" value="1"></label>
+    <button class="btn sm ghost" id="tReset">↺ Reset</button>
+    <button class="btn sm ghost" id="tShuffle">🎲 New workload</button>
+    <span class="pill" id="tIter">round 0</span>
+    <span class="pill" id="tBudget">🔋 0 / 400</span>
+  </div>
+  <div class="row fill">
+    <div class="panel grow2 col">
+      <svg id="ganttPlay" class="gantt" viewBox="0 0 760 300" preserveAspectRatio="xMidYMid meet"></svg>
+      <div class="caption" id="tBanner">🚁 Starts from the HEFT schedule (score 0.8000).</div>
+    </div>
+    <div class="panel grow col">
+      <h4 class="ph">🌫️ Candidates this round (best first)</h4>
+      <div id="tCands" class="cands"></div>
+      <h4 class="ph">👣 Footprints (tabu list): task ↛ VM · rounds left</h4>
+      <div id="tTabu" class="tabulist"></div>
+      <canvas id="tConv" class="conv"></canvas>
+      <div class="tiles sm" id="tTiles"></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-id="ablation" data-sec="The algorithm">
+  <p class="kicker">Ablation: remove one ingredient at a time</p>
+  <h2>Does each trick really help? Same budget, real algorithm</h2>
+  <div class="row fill">
+    <div class="panel grow2 col"><div id="ablRows" class="ablrows"></div><div class="caption" id="ablVerdict">Press <b>Run</b>. Each version gets the same budget (300 evaluations) and runs with 8 different random seeds.</div></div>
+    <div class="side">
+      <button class="btn primary" id="ablRun">▶ Run ablation</button>
+      <p>Like the expedition game, but on the real scheduling problem:</p>
+      <p>✅ = ingredient used · ✗ = removed</p>
+      <p class="small">Bar = average score over 8 runs (<b>shorter is better</b>). The thin line shows the spread (± standard deviation).</p>
+      <p class="note">This is the "compare against the component algorithms" check from the week-12 checklist.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PART 4: RESULTS ============ -->
+<section class="slide" data-id="results" data-sec="Results">
+  <p class="kicker">Experiments in cloudsim_hybrid · 10 runs per algorithm, mean ± std</p>
+  <h2>How does it compare with 8 other algorithms?</h2>
+  <div class="controls">
+    <div class="tabs" id="scenTabs"></div>
+    <select id="metricSel"></select>
+  </div>
+  <div class="row fill">
+    <div class="panel grow2 col"><div class="ctitle" id="chartTitle"></div><svg id="resChart" class="reschart" viewBox="0 0 760 340" preserveAspectRatio="xMidYMid meet"></svg></div>
+    <div class="side" id="insights"></div>
+  </div>
+</section>
+
+<section class="slide" data-id="analysis" data-sec="Results">
+  <p class="kicker">Honest analysis</p>
+  <h2>Where HEFT-TS-VND wins, where it loses, and why</h2>
+  <div class="analysis">
+    <div class="acard good in" style="--d:.1s"><h4>✅ Strengths</h4>
+      <p>⚡ <b>Fastest search method</b>: about 2× faster than ALNS and DHA-ALNS at the same evaluation budget.</p>
+      <p>🥇 <b>Ties for best</b> on alibaba_small (0.7928, same as ALNS).</p>
+      <p>📏 <b>Keeps HEFT's finish time</b> exactly: it never trades finish time away.</p>
+      <p>🔁 <b>Low variance</b>: best-move choice and memory instead of random restarts.</p></div>
+    <div class="acard bad in" style="--d:.25s"><h4>⚠️ Weaknesses</h4>
+      <p>💸 On <b>alibaba_medium</b> it ends with a higher cost (1.76 vs 1.65 for ALNS), so its score is worse (0.785 vs 0.773).</p>
+      <p>🌫️ About 15 evaluations per round means only <b>about 100 rounds</b> within 1,500 evaluations. The "fog" is too thick.</p>
+      <p>🎯 About half of the candidates are critical-path moves, but HEFT's finish time is already near-optimal. The gains are in <b>cost and energy</b>.</p></div>
+    <div class="acard in" style="--d:.4s"><h4>🔧 Next improvements</h4>
+      <p>Spend more of the candidate list on <b>cheaper-VM and swap</b> moves, or adapt the mix to the objective weights.</p>
+      <p><b>Incremental evaluation</b> (re-simulate only the affected tasks) to afford more rounds.</p>
+      <p>Tune tenure and candidate-list size on all 4 scenarios.</p></div>
+    <div class="acard in" style="--d:.55s"><h4>🧩 Why the earlier DHA-ALNS lagged</h4>
+      <p>100–300 tasks is too small for decomposition to pay off. Clusters share VMs and data links, so merged results clash. Workers restart their search every round. On alibaba_medium: 0.779 ± 0.002 vs 0.773 ± 0.002 for ALNS.</p></div>
+  </div>
+</section>
+
+<section class="slide" data-id="repo" data-sec="Repo">
+  <p class="kicker">Where is everything?</p>
+  <h2>Map of the repository</h2>
+  <div class="row fill">
+    <div class="panel tree" id="tree"></div>
+    <div class="panel grow" id="fileInfo"></div>
+  </div>
+</section>
+
+<section class="slide" data-id="baselines" data-sec="Repo">
+  <p class="kicker">The competition</p>
+  <h2>9 algorithms compared. Hover to flip.</h2>
+  <div class="flips" id="flips"></div>
+</section>
+
+<section class="slide" data-id="summary" data-sec="Summary">
+  <p class="kicker">Takeaways</p>
+  <h2>HEFT-TS-VND in one slide</h2>
+  <div class="takeaways">
+    <div class="in" style="--d:.1s"><i>🚁</i><b>HEFT start</b><span>a good schedule in milliseconds</span></div>
+    <div class="in" style="--d:.25s"><i>🌫️</i><b>Targeted moves</b><span>critical path, bottleneck, cheaper VM, swap</span></div>
+    <div class="in" style="--d:.4s"><i>👣</i><b>Tabu memory</b><span>never step straight back; aspiration allows new records</span></div>
+    <div class="in" style="--d:.55s"><i>🔦</i><b>VND polish</b><span>N1 → N2 → N3 on every new best</span></div>
+    <div class="in" style="--d:.7s"><i>📊</i><b>Fair test</b><span>equal budget, 10 seeds, ablation</span></div>
+  </div>
+  <pre class="in" style="--d:.9s"><code>python -m datasets.download all                   # Google + Alibaba traces
+python main.py -d alibaba -s small medium -r 10   # all 9 algorithms, 10 seeds
+python main.py -a HEFT ALNS HEFT-TS -r 10         # just the key comparison</code></pre>
+  <p class="bigq in" style="--d:1.1s">Thanks! 🎉</p>
+</section>
+
+</div>
+
+<div class="progress"><div id="progBar"></div></div>
+<div class="navbar">
+  <button class="nbtn" id="menuBtn" title="Menu (M)">☰</button>
+  <span class="sec" id="secLabel"></span>
+  <span class="spacer"></span>
+  <button class="nbtn" id="prevBtn" title="Previous (←)">←</button>
+  <span class="count" id="count"></span>
+  <button class="nbtn" id="nextBtn" title="Next (→)">→</button>
+</div>
+<div class="menu" id="menu"><div class="menu-in" id="menuList"></div></div>
+
+<script src="data.js"></script>
+<script src="engine.js"></script>
+<script src="mountain.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
