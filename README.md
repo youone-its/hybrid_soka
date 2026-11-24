@@ -53,8 +53,35 @@ results/                 # output
   putaran (ekuivalen wall-clock), bukan jumlah total.
 
 ## Dataset
+Trace mentah **tidak disimpan di repo** (`raw/` ada di `.gitignore`, file Alibaba ±765 MB).
+Unduh dulu sebelum menjalankan `main.py`:
+
 ```bash
-python -m datasets.download all          # Google 2011 task_events part-0 (4 MB) + Alibaba 2018 batch_task (130 MB)
+# Cara 1 — lewat script (otomatis unduh + ekstrak ke data/raw/)
+python -m datasets.download alibaba      # Alibaba 2018 batch_task (130 MB unduh, 765 MB setelah ekstrak)
+python -m datasets.download google       # Google 2011 task_events part-0 (4 MB)
+python -m datasets.download all          # keduanya
+```
+
+```bash
+# Cara 2 — manual
+mkdir -p data/raw/alibaba data/raw/google
+curl -L -o data/raw/alibaba/batch_task.tar.gz \
+  http://aliopentrace.oss-cn-beijing.aliyuncs.com/v2018Traces/batch_task.tar.gz
+tar -xzf data/raw/alibaba/batch_task.tar.gz -C data/raw/alibaba   # -> data/raw/alibaba/batch_task.csv
+rm data/raw/alibaba/batch_task.tar.gz                              # opsional
+curl -L -o data/raw/google/task_events_part-00000.csv.gz \
+  https://storage.googleapis.com/clusterdata-2011-2/task_events/part-00000-of-00500.csv.gz
+```
+
+Struktur yang diharapkan:
+```
+data/raw/alibaba/batch_task.csv
+data/raw/google/task_events_part-00000.csv.gz
+```
+
+Lalu jalankan:
+```bash
 python main.py -d alibaba -s medium      # alibaba (default) | google
 ```
 | Dataset | Sumber | Yang dipakai | Dependensi |
